@@ -46,8 +46,8 @@ OPENAI_API_KEY = os.getenv(
     'OPENAI_API_KEY', os.getenv('SANDBOX_ENV_OPENAI_API_KEY', '')
 )
 OPENAI_BASE_URL = os.getenv('OPENAI_BASE_URL', 'https://api.openai.com/v1')
-OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4o-2024-05-13')
-MAX_TOKEN = os.getenv('MAX_TOKEN', 500)
+OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4o-mini-2024-07-18')
+MAX_TOKEN = os.getenv('MAX_TOKEN', 300)
 
 OPENAI_PROXY = f'{OPENAI_BASE_URL}/chat/completions'
 
@@ -966,119 +966,808 @@ def parse_pptx(file_path: str) -> None:
         print(f'Error reading PowerPoint file: {e}')
 
 
-def apply_git_patch(patch_str, directory='/workspace'):
-    """
-    Apply a git patch from a string to a designated folder within the given directory.
+# def apply_git_patch(patch_str, directory='/workspace'):
+#     """
+#     Apply a git patch from a string to a designated folder within the given directory.
 
-    Parameters:
-    - patch_str (str): The git patch as a string.
-    - directory (str): The directory containing the subdirectory where the patch should be applied.
+#     Parameters:
+#     - patch_str (str): The git patch as a string.
+#     - directory (str): The directory containing the subdirectory where the patch should be applied.
 
-    Returns:
-    - bool: True if the patch was successfully applied, False otherwise.
-    """
-    try:
-        # Ensure the target directory exists
-        if not os.path.isdir(directory):
-            raise FileNotFoundError(f'The directory {directory} does not exist.')
+#     Returns:
+#     - bool: True if the patch was successfully applied, False otherwise.
+#     """
+#     try:
+#         # Ensure the target directory exists
+#         if not os.path.isdir(directory):
+#             raise FileNotFoundError(f'The directory {directory} does not exist.')
 
-        # Identify the full path to the subdirectory (assuming that there is only one subdirectory)
-        subdirectories = [
-            d
-            for d in os.listdir(directory)
-            if os.path.isdir(os.path.join(directory, d))
-        ]
+#         # Identify the full path to the subdirectory (assuming that there is only one subdirectory)
+#         subdirectories = [
+#             d
+#             for d in os.listdir(directory)
+#             if os.path.isdir(os.path.join(directory, d))
+#         ]
 
-        if len(subdirectories) != 1:
-            raise FileNotFoundError(
-                f'Expected exactly one subdirectory in {directory}, found {len(subdirectories)}.'
-            )
+#         if len(subdirectories) != 1:
+#             raise FileNotFoundError(
+#                 f'Expected exactly one subdirectory in {directory}, found {len(subdirectories)}.'
+#             )
 
-        subdirectory_path = os.path.join(directory, subdirectories[0])
-        print(subdirectory_path)
-        # Change the current working directory to the subdirectory
-        os.chdir(subdirectory_path)
+#         subdirectory_path = os.path.join(directory, subdirectories[0])
+#         print(subdirectory_path)
+#         # Change the current working directory to the subdirectory
+#         os.chdir(subdirectory_path)
 
-        # Apply the patch
-        result = subprocess.run(
-            ['git', 'apply', '-'], input=patch_str, text=True, capture_output=True
-        )
+#         # Apply the patch
+#         result = subprocess.run(
+#             ['git', 'apply', '-'], input=patch_str, text=True, capture_output=True
+#         )
 
-        # Check if the patch was applied successfully
-        if result.returncode != 0:
-            print(f'Error applying patch: {result.stderr}')
-            return False
+#         # Check if the patch was applied successfully
+#         if result.returncode != 0:
+#             print(f'Error applying patch: {result.stderr}')
+#             return False
 
-        print('Patch applied successfully.')
-        return True
+#         print('Patch applied successfully.')
+#         return True
 
-    except Exception as e:
-        print(f'An error occurred: {e}')
-        return False
+#     except Exception as e:
+#         print(f'An error occurred: {e}')
+#         return False
 
 
-def try_apply_git_patch(patch_str, directory='./workspace'):
-    """Apply a git patch from a string to a designated folder, then revert it.
+# def try_apply_git_patch(patch_str, directory='./workspace'):
+#     """Apply a git patch from a string to a designated folder, then revert it.
 
-    Parameters:
-    - patch_str (str): The git patch as a string.
-    - directory (str): The directory where the patch should be applied.
+#     Parameters:
+#     - patch_str (str): The git patch as a string.
+#     - directory (str): The directory where the patch should be applied.
 
-    Returns:
-    - str: The text of the new file if the patch was successfully applied,
-           an error message otherwise.
-    """
-    import os
-    import subprocess
+#     Returns:
+#     - str: The text of the new file if the patch was successfully applied,
+#            an error message otherwise.
+#     """
+#     import os
+#     import subprocess
 
-    try:
-        # Ensure the target directory exists
-        if not os.path.isdir(directory):
-            raise FileNotFoundError(f'The directory {directory} does not exist.')
+#     try:
+#         # Ensure the target directory exists
+#         if not os.path.isdir(directory):
+#             raise FileNotFoundError(f'The directory {directory} does not exist.')
 
-        # Change the current working directory to the target directory
-        os.chdir(directory)
+#         # Change the current working directory to the target directory
+#         os.chdir(directory)
 
-        # Create a branch for safely applying the patch
-        subprocess.run(
-            ['git', 'checkout', '-b', 'temp_patch_branch'], capture_output=True
-        )
+#         # Create a branch for safely applying the patch
+#         subprocess.run(
+#             ['git', 'checkout', '-b', 'temp_patch_branch'], capture_output=True
+#         )
 
-        # Apply the patch
-        result = subprocess.run(
-            ['git', 'apply', '-'], input=patch_str, text=True, capture_output=True
-        )
+#         # Apply the patch
+#         result = subprocess.run(
+#             ['git', 'apply', '-'], input=patch_str, text=True, capture_output=True
+#         )
 
-        # Check if the patch was applied successfully
-        if result.returncode != 0:
-            return f'Error applying patch: {result.stderr}'
+#         # Check if the patch was applied successfully
+#         if result.returncode != 0:
+#             return f'Error applying patch: {result.stderr}'
 
-        # Get the status of the changes
-        status_result = subprocess.run(
-            ['git', 'status', '-s'], text=True, capture_output=True
-        )
-        if status_result.returncode != 0:
-            return f'Error getting git status: {status_result.stderr}'
+#         # Get the status of the changes
+#         status_result = subprocess.run(
+#             ['git', 'status', '-s'], text=True, capture_output=True
+#         )
+#         if status_result.returncode != 0:
+#             return f'Error getting git status: {status_result.stderr}'
 
-        # Get the diff of the applied patch
-        diff_result = subprocess.run(
-            ['git', 'diff', '--cached'], text=True, capture_output=True
-        )
-        if diff_result.returncode != 0:
-            return f'Error getting git diff: {diff_result.stderr}'
+#         # Get the diff of the applied patch
+#         diff_result = subprocess.run(
+#             ['git', 'diff', '--cached'], text=True, capture_output=True
+#         )
+#         if diff_result.returncode != 0:
+#             return f'Error getting git diff: {diff_result.stderr}'
 
-        # Revert the applied patch
-        subprocess.run(['git', 'checkout', '-'], capture_output=True)
-        subprocess.run(
-            ['git', 'branch', '-D', 'temp_patch_branch'], capture_output=True
-        )
+#         # Revert the applied patch
+#         subprocess.run(['git', 'checkout', '-'], capture_output=True)
+#         subprocess.run(
+#             ['git', 'branch', '-D', 'temp_patch_branch'], capture_output=True
+#         )
 
-        print('Patch applied and reverted successfully.')
-        return diff_result.stdout
+#         print('Patch applied and reverted successfully.')
+#         return diff_result.stdout
 
-    except Exception as e:
-        return f'An error occurred: {e}'
+#     except Exception as e:
+#         return f'An error occurred: {e}'
 
+# MAX_CONTEXT_LENGTH = 128000
+# TOP_N = 3
+# CONTEXT_WINDOW = 10
+# ADD_SPACE = False
+# STICKY_SCROLL = False
+# NO_LINE_NUMBER = False
+# TEMPERATURE = 0.8
+# NUM_SAMPLES = 4
+# LOC_INTERVAL = True
+# FINE_GRAIN_LOC_ONLY = False
+# COT = True
+# DIFF_FORMAT = True
+# STOP_AT_N_UNIQUE_VALID_SAMPLES = -1
+# MAX_SAMPLES = 2
+# SKIP_GREEDY = False
+
+# def _parse_model_return_lines(content: str) -> list[str]:
+#     if content:
+#         return content.strip().split('\n')
+#     return ['']
+
+# def install_agentless_libraries():
+#     import sys
+
+#     def install_libcst():
+#         print('libcst not found. Installing...')
+#         subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'libcst'])
+#         print('libcst installed successfully.')
+
+#     install_libcst()
+
+# def retrieve_structure(directory_path="./workspace"):
+#     """Create the structure of the repository directory by parsing Python files.
+
+#     If a pickled structure exists, load it. Otherwise, create it and pickle the result.
+
+#     :param directory_path: Path to the repository directory.
+#     :return: A dictionary representing the structure.
+#     """
+
+#     from Agentless.agentless.util.preprocess_data import (
+#         filter_none_python,
+#         filter_out_test_files,
+#     )
+#     from Agentless.get_repo_structure.get_repo_structure import (
+#         parse_python_file,
+#     )
+
+#     install_agentless_libraries()
+
+#     pickle_file = os.path.join(directory_path, 'repo_structure.pkl')
+
+#     # Try to load the pickle file if it exists
+#     if os.path.isfile(pickle_file):
+#         with open(pickle_file, 'rb') as pf:
+#             return pickle.load(pf)
+
+#     # Proceed to create the structure if pickle file doesn't exist
+#     structure: Dict[str, Any] = {}
+
+#     for root, _, files in os.walk(directory_path):
+#         repo_name = os.path.basename(directory_path)
+#         relative_root = os.path.relpath(root, directory_path)
+
+#         if relative_root == '.':
+#             relative_root = repo_name
+
+#         curr_struct = structure
+#         for part in relative_root.split(os.sep):
+#             if part not in curr_struct:
+#                 curr_struct[part] = {}
+#             curr_struct = curr_struct[part]
+
+#         for file_name in files:
+#             if file_name.endswith('.py'):
+#                 file_path = os.path.join(root, file_name)
+#                 class_info, function_names, file_lines = parse_python_file(
+#                     file_path
+#                 )
+#                 curr_struct[file_name] = {
+#                     'classes': class_info,
+#                     'functions': function_names,
+#                     'text': file_lines,
+#                 }
+#             else:
+#                 curr_struct[file_name] = {}
+
+#     filter_none_python(structure)
+#     filter_out_test_files(structure)
+
+#     # Save the structure to a pickle file
+#     with open(pickle_file, 'wb') as pf:
+#         pickle.dump(structure, pf)
+
+#     return structure
+
+# def agentless_file_localization(problem_statement):
+#     from Agentless.agentless.fl.FL import LLMFL
+#     from Agentless.agentless.util.preprocess_data import (
+#         correct_file_paths,
+#         get_full_file_paths_and_classes_and_functions,
+#         show_project_structure,
+#     )
+
+#     install_agentless_libraries()
+
+#     structure = retrieve_structure()
+
+#     message = LLMFL.obtain_relevant_files_prompt.format(
+#         problem_statement=problem_statement,
+#         structure=show_project_structure(structure).strip(),
+#     ).strip()
+#     logger.info(f'prompting with message:\n{message}')
+#     logger.info('=' * 80)
+
+#     raw_output = client.chat.completions.create(
+#         model=OPENAI_MODEL,
+#         messages=[{'content': message, 'role': 'user'}],
+#         temperature=0,
+#         max_tokens=MAX_TOKEN
+#     )['choices'][0]['message']['content']
+#     model_found_files = _parse_model_return_lines(raw_output)
+
+#     files, classes, functions = get_full_file_paths_and_classes_and_functions(
+#         structure
+#     )
+
+#     # Never match partial paths for consistency with main Agentless results
+#     found_files = correct_file_paths(model_found_files, files, False)
+#     logger.info(found_files)
+
+#     return "\n".join(found_files)
+
+# def agentless_related_localization(problem_statement, found_files):
+#     from Agentless.agentless.fl.FL import LLMFL
+#     from Agentless.agentless.util.api_requests import (
+#         num_tokens_from_messages,
+#     )
+#     from Agentless.agentless.util.compress_file import get_skeleton
+#     from Agentless.agentless.util.postprocess_data import (
+#         extract_code_blocks,
+#         extract_locs_for_files,
+#     )
+#     from Agentless.agentless.util.preprocess_data import (
+#         get_repo_files,
+#     )
+
+#     structure = retrieve_structure()
+
+#     if len(found_files) != 0:
+#         file_names = found_files[:TOP_N]
+#     else:
+#         file_names = found_files
+#     file_contents = get_repo_files(structure, file_names)
+#     compressed_file_contents = {
+#         fn: get_skeleton(code) for fn, code in file_contents.items()
+#     }
+#     contents = [
+#         LLMFL.file_content_in_block_template.format(file_name=fn, file_content=code)
+#         for fn, code in compressed_file_contents.items()
+#     ]
+#     file_contents = ''.join(contents)
+#     template = (
+#         LLMFL.obtain_relevant_functions_and_vars_from_compressed_files_prompt_more
+#     )
+#     message = template.format(
+#         problem_statement=problem_statement, file_contents=file_contents
+#     )
+
+#     def message_too_long(message):
+#         return num_tokens_from_messages(message, OPENAI_MODEL) >= MAX_CONTEXT_LENGTH
+
+#     while message_too_long(message) and len(contents) > 1:
+#         logger.info(f'reducing to \n{len(contents)} files')
+#         contents = contents[:-1]
+#         file_contents = ''.join(contents)
+#         message = template.format(
+#             problem_statement=problem_statement, file_contents=file_contents
+#         )  # Recreate message
+
+#     if message_too_long(message):
+#         logger.info
+#         raise ValueError(
+#             'The remaining file content is too long to fit within the context length'
+#         )
+#     logger.info(f'prompting with message:\n{message}')
+#     logger.info('=' * 80)
+
+#     raw_output = client.chat.completions.create(
+#         model=OPENAI_MODEL,
+#         messages=[{'content': message, 'role': 'user'}],
+#         temperature=0,
+#         max_tokens=MAX_TOKEN,
+#     )['choices'][0]['message']['content']
+
+#     model_found_locs = extract_code_blocks(raw_output)
+#     model_found_locs_separated = extract_locs_for_files(
+#         model_found_locs, file_names
+#     )
+
+#     logger.info('==== raw output ====')
+#     logger.info(raw_output)
+#     logger.info('=' * 80)
+#     logger.info('==== extracted locs ====')
+#     for loc in model_found_locs_separated:
+#         logger.info(loc)
+#     logger.info('=' * 80)
+
+#     print(raw_output)
+
+#     return model_found_locs_separated
+
+# def agentless_line_level_localization(
+#     file_names, found_related_locs, problem_statement
+# ):
+
+#     structure = retrieve_structure()
+
+#     from Agentless.agentless.fl.FL import LLMFL
+#     from Agentless.agentless.repair.repair import (
+#         construct_topn_file_context,
+#     )
+#     from Agentless.agentless.util.api_requests import (
+#         num_tokens_from_messages,
+#     )
+#     from Agentless.agentless.util.postprocess_data import (
+#         extract_code_blocks,
+#         extract_locs_for_files,
+#     )
+#     from Agentless.agentless.util.preprocess_data import (
+#         get_repo_files,
+#     )
+
+#     coarse_locs = {}
+#     for i, pred_file in enumerate(file_names):
+#         if len(found_related_locs) > i:
+#             coarse_locs[pred_file] = found_related_locs[i]
+
+#     file_contents = get_repo_files(structure, file_names)
+#     topn_content, _ = construct_topn_file_context(
+#         coarse_locs,
+#         file_names,
+#         file_contents,
+#         structure,
+#         context_window=CONTEXT_WINDOW,
+#         loc_interval=True,
+#         add_space=ADD_SPACE,
+#         sticky_scroll=STICKY_SCROLL,
+#         no_line_number=NO_LINE_NUMBER,
+#     )
+#     if NO_LINE_NUMBER:
+#         template = LLMFL.obtain_relevant_code_combine_top_n_no_line_number_prompt
+#     else:
+#         template = LLMFL.obtain_relevant_code_combine_top_n_prompt
+#     message = template.format(
+#         problem_statement=problem_statement, file_contents=topn_content
+#     )
+#     logger.info(f'prompting with message:\n{message}')
+#     logger.info('=' * 80)
+#     assert num_tokens_from_messages(message, OPENAI_MODEL) < MAX_CONTEXT_LENGTH
+
+#     raw_trajs = client.chat.completions.create(
+#         model=OPENAI_MODEL,
+#         messages=[{'content': message, 'role': 'user'}],
+#         temperature=TEMPERATURE,
+#         max_tokens=OPENAI_MODEL,
+#         n=NUM_SAMPLES,
+#     )['choices']
+#     # raw_trajs = model.codegen(message, num_samples=NUM_SAMPLES)
+
+#     # Merge trajectories
+#     raw_outputs = [raw_traj['message']['content'] for raw_traj in raw_trajs]
+
+#     model_found_locs_separated_in_samples = []
+#     for raw_output in raw_outputs:
+#         model_found_locs = extract_code_blocks(raw_output)
+#         model_found_locs_separated = extract_locs_for_files(
+#             model_found_locs, file_names
+#         )
+#         model_found_locs_separated_in_samples.append(model_found_locs_separated)
+
+#         logger.info('==== raw output ====')
+#         logger.info(raw_output)
+#         logger.info('=' * 80)
+#         print(raw_output)
+#         print('=' * 80)
+#         logger.info('==== extracted locs ====')
+#         for loc in model_found_locs_separated:
+#             logger.info(loc)
+#         logger.info('=' * 80)
+#     logger.info('Localizations: ')
+#     logger.info(model_found_locs_separated_in_samples)
+#     logger.info('==== Input coarse_locs')
+#     coarse_info = ''
+#     for fn, found_locs in coarse_locs.items():
+#         coarse_info += f'### {fn}\n'
+#         if isinstance(found_locs, str):
+#             coarse_info += found_locs + '\n'
+#         else:
+#             coarse_info += '\n'.join(found_locs) + '\n'
+#     logger.info('\n' + coarse_info)
+#     if len(model_found_locs_separated_in_samples) == 1:
+#         model_found_locs_separated_in_samples = (
+#             model_found_locs_separated_in_samples[0]
+#         )
+
+#     merged_locs = []
+#     first_merge = (
+#         model_found_locs_separated_in_samples[0]
+#         + model_found_locs_separated_in_samples[1]
+#     )
+#     second_merge = (
+#         model_found_locs_separated_in_samples[2]
+#         + model_found_locs_separated_in_samples[3]
+#     )
+#     merged_locs.append(first_merge)
+#     merged_locs.append(second_merge)
+
+#     def flatten_innermost_strings(nested_list):
+#         if isinstance(nested_list, list):
+#             # Check if we have a list with a single item which is a string
+#             if len(nested_list) == 1 and isinstance(nested_list[0], str):
+#                 return nested_list[0]
+#             # Otherwise, recursively process each element in the list
+#             return [flatten_innermost_strings(item) for item in nested_list]
+#         else:
+#             return nested_list
+
+#     return flatten_innermost_strings(merged_locs)
+
+# def agentless_repair(
+#     found_files, both_found_edit_locs, problem_statement
+# ):
+
+#     structure = retrieve_structure()
+
+#     from Agentless.agentless.repair.repair import (
+#         _post_process_multifile_repair,
+#         construct_topn_file_context,
+#         repair_prompt_combine_topn,
+#         repair_prompt_combine_topn_cot,
+#         repair_prompt_combine_topn_cot_diff,
+#         repair_relevant_file_instruction,
+#     )
+#     from Agentless.agentless.util.preprocess_data import (
+#         get_full_file_paths_and_classes_and_functions,
+#     )
+
+#     for found_edit_locs in both_found_edit_locs:
+#         pred_files = found_files[:TOP_N]
+#         file_to_edit_locs = {}
+#         for i, pred_file in enumerate(pred_files):
+#             if len(found_edit_locs) > i:
+#                 file_to_edit_locs[pred_file] = found_edit_locs[i]
+
+#         files, _, _ = get_full_file_paths_and_classes_and_functions(structure)
+
+#         # Construct file contents
+#         file_contents = dict()
+#         for i, pred_file in enumerate(pred_files):
+#             content = None
+
+#             for file_content in files:
+#                 if file_content[0] == pred_file:
+#                     content = '\n'.join(file_content[1])
+#                     file_contents[pred_file] = content
+#                     break
+
+#         logger.info('FILE CONTENTS')
+#         logger.info(file_contents)
+
+#         topn_content, file_loc_intervals = construct_topn_file_context(
+#             file_to_edit_locs,
+#             pred_files,
+#             file_contents,
+#             structure,
+#             context_window=CONTEXT_WINDOW,
+#             loc_interval=LOC_INTERVAL,
+#             fine_grain_loc_only=FINE_GRAIN_LOC_ONLY,
+#             add_space=ADD_SPACE,
+#             no_line_number=NO_LINE_NUMBER,
+#             sticky_scroll=STICKY_SCROLL,
+#         )
+
+#         if topn_content.strip() == '':
+#             return []
+
+#         prompt_template = (
+#             repair_prompt_combine_topn_cot_diff
+#             if COT and DIFF_FORMAT
+#             else repair_prompt_combine_topn_cot
+#             if COT
+#             else repair_prompt_combine_topn
+#         )
+#         file_instruction = repair_relevant_file_instruction
+#         message = prompt_template.format(
+#             repair_relevant_file_instruction=file_instruction,
+#             problem_statement=problem_statement,
+#             content=topn_content.rstrip(),
+#         ).strip()
+#         logger.info(f'prompting with message:\n{message}')
+
+#         all_generations, counts, _, prev_contents, file_names = [], [], [], [], []
+#         sample_responses: List[Dict[str, Any]] = []
+#         # Using early stopping will cost more since the input tokens will be charged multiple times.
+#         # For now we disable it.
+#         assert STOP_AT_N_UNIQUE_VALID_SAMPLES == -1
+
+#         if SKIP_GREEDY:
+#             greedy_traj = {
+#                 'response': '',
+#                 'usage': {
+#                     'completion_tokens': 0,
+#                     'prompt_tokens': 0,
+#                 },
+#             }
+#         else:
+#             greedy_traj = client.chat.completions.create(
+#                 model=OPENAI_MODEL,
+#                 messages=[{'content': message, 'role': 'user'}],
+#                 temperature=0,
+#                 max_tokens=1024,
+#             )['choices'][0]
+#         sample_responses.append(greedy_traj)
+
+#         if MAX_SAMPLES - 1:
+#             sample_trajs = client.chat.completions.create(
+#                 model=OPENAI_MODEL,
+#                 messages=[{'content': message, 'role': 'user'}],
+#                 temperature=TEMPERATURE,
+#                 max_tokens=1024,
+#                 n=MAX_SAMPLES - 1,
+#             )['choices']
+#         else:
+#             sample_trajs = []
+
+#         sample_responses.extend(sample_trajs)
+
+#     count = 0
+#     raw_outputs = []
+#     while count < MAX_SAMPLES:
+#         print(f'trying the {count + 1}-th sample ...')
+#         raw_output = sample_responses[count]['message']['content']
+#         count += 1
+
+#         all_generations.append(raw_output)
+
+#         edited_file, new_content = _post_process_multifile_repair(
+#             raw_output,
+#             file_contents,
+#             logger,
+#             file_loc_intervals,
+#             diff_format=DIFF_FORMAT,
+#         )
+
+#         if new_content == '':
+#             prev_contents.append('')
+#             file_names.append('')
+#         else:
+#             prev_content = file_contents[edited_file]
+#             prev_contents.append(prev_content)
+#             file_names.append(edited_file)
+
+#         counts.append(count)
+#         raw_outputs.append(raw_output)
+#     return raw_outputs, prev_contents, file_names
+
+# def post_process_raw_output(
+#     raw_output_text, file_contents, file_loc_intervals
+# ):
+#     "post_process_raw_output"
+#     from difflib import unified_diff
+
+#     from Agentless.agentless.repair.repair import (
+#         _post_process_multifile_repair,
+#     )
+#     from Agentless.agentless.util.postprocess_data import (
+#         check_code_differ_by_just_empty_lines,
+#         check_syntax,
+#         fake_git_repo,
+#         lint_code,
+#     )
+
+#     git_diffs = ''
+#     raw_git_diffs = ''
+#     lint_success = False
+#     content = ''
+#     try:
+#         edited_file, new_content = _post_process_multifile_repair(
+#             raw_output_text,
+#             file_contents,
+#             logger,
+#             file_loc_intervals,
+#             diff_format=DIFF_FORMAT,
+#         )
+#         logger.info('EDITED FILE')
+#         logger.info(edited_file)
+#         logger.info('NEW CONTENT')
+#         logger.info(new_content)
+#         if (edited_file in file_contents) and new_content:
+#             content = file_contents[edited_file]
+
+#             git_diff = fake_git_repo(
+#                 'playground', edited_file, content, new_content
+#             )
+#             logger.info('1 git diff')
+#             logger.info(git_diff)
+
+#             raw_git_diffs += '\n' + git_diff.replace(
+#                 '\\ No newline at end of file\n', ''
+#             )
+
+#             syntax_success = check_syntax(new_content)
+#             lint_success, prev_errors, errors = lint_code(
+#                 'playground', 'test.py', new_content, file_contents[edited_file]
+#             )
+
+#             differ_by_empty_lines = check_code_differ_by_just_empty_lines(
+#                 new_content, file_contents[edited_file]
+#             )
+
+#             print(lint_success, prev_errors, errors, differ_by_empty_lines)
+#             logger.info(
+#                 f'checks pass: {lint_success, prev_errors, errors, differ_by_empty_lines}'
+#             )
+#             if syntax_success and not differ_by_empty_lines:
+#                 git_diffs = raw_git_diffs
+#             else:
+#                 git_diffs = ''  # no need to evaluate
+#         else:
+#             diff = list(
+#                 unified_diff(
+#                     content.split('\n'),
+#                     new_content.split('\n'),
+#                     fromfile=edited_file,
+#                     tofile=edited_file,
+#                     lineterm='',
+#                 )
+#             )
+#             print('Failed parsing diff!')
+#             print('\n'.join(diff))
+#     except Exception as e:
+#         print(raw_output_text)
+#         print(e)
+
+#     return git_diffs, raw_git_diffs, content
+
+# def agentless_post_process_repair(
+#     pred_files,
+#     both_found_edit_locs,
+#     generation_original_file_contents,
+#     generation_pred_files,
+#     raw_outputs,
+# ):
+#     """
+#     apply some diff formatting. Also strips comments and trailing spaces to better identify identical patches
+#     """
+#     from Agentless.agentless.util.postprocess_data import normalize_patch
+#     from Agentless.agentless.util.preprocess_data import (
+#         transfer_arb_locs_to_locs,
+#     )
+
+#     num_each_edit_loc = int(len(raw_outputs) / 2)
+
+#     processed_patches = []
+#     for generation_idx, raw_output_text in enumerate(raw_outputs):
+#         if num_each_edit_loc > generation_idx:
+#             found_edit_locs = both_found_edit_locs[0]
+#         else:
+#             found_edit_locs = both_found_edit_locs[1]
+#         if raw_output_text != '':
+#             try:
+#                 original_file_content = generation_original_file_contents[
+#                     generation_idx
+#                 ]
+#                 pred_file = generation_pred_files[
+#                     generation_idx
+#                 ]  # Not sure if this works
+
+#                 git_diffs = ''
+
+#                 file_contents = {pred_file: original_file_content}
+
+#                 file_loc_intervals = dict()
+
+#                 for i, tmp_pred_file in enumerate(pred_files):
+#                     if tmp_pred_file != pred_file:
+#                         continue
+#                     if len(found_edit_locs) > i:
+#                         # try:
+#                         _, context_intervals = transfer_arb_locs_to_locs(
+#                             found_edit_locs[i],
+#                             None,
+#                             pred_files[i],
+#                             CONTEXT_WINDOW,
+#                             LOC_INTERVAL,
+#                             FINE_GRAIN_LOC_ONLY,
+#                             file_content=file_contents[pred_file]
+#                             if pred_file in file_contents
+#                             else '',
+#                         )
+#                         logger.info('context interval')
+#                         logger.info(context_intervals)
+#                     else:
+#                         _, context_intervals = [], []  # default values.
+
+#             except Exception as e:
+#                 logger.info('file loc interval error')
+#                 logger.info(e)
+#                 print(e)
+#                 raw_output_text = ''
+
+#             file_loc_intervals[pred_file] = context_intervals
+
+#             logger.info('RAW OUTPUT TEXT')
+#             logger.info(raw_output_text)
+
+#             if raw_output_text:
+#                 logger.info('FILE LOCAL INTERVAL')
+#                 logger.info(file_loc_intervals)
+#                 logger.info('FILE CONTENT')
+#                 logger.info(file_contents)
+#                 git_diffs, raw_git_diffs, content = post_process_raw_output(
+#                     raw_output_text, file_contents, logger, file_loc_intervals
+#                 )
+
+#                 # Setting 0 as the instance_id since this function doesn't
+#                 # actually use the instance_id for anything
+#                 logger.info('GIT DIFF BEFORE NORMALIZING')
+#                 logger.info(git_diffs)
+#                 patch_lines = git_diffs.split('\n')
+#                 patch_lines = [
+#                     line for line in patch_lines if not line.startswith('index')
+#                 ]
+#                 git_diffs = '\n'.join(patch_lines)
+
+#                 normalized_patch = normalize_patch(
+#                     0, git_diffs, original_file_content
+#                 )
+
+#                 normalized_lines = normalized_patch.split('\n')
+#                 normalized_lines = [
+#                     line
+#                     for line in normalized_lines
+#                     if not line.startswith('index')
+#                 ]
+#                 normalized_patch = '\n'.join(patch_lines)
+
+#                 if normalized_patch.lstrip():
+#                     processed_patches.append(
+#                         [
+#                             normalized_patch,
+#                             git_diffs.replace(
+#                                 '\\ No newline at end of file\n', ''
+#                             ).lstrip(),
+#                         ]
+#                     )
+
+#     return [patch for patch in processed_patches if patch[0].strip() != '']
+
+
+# def most_frequent_string(processed_patches):
+#     "fdkfjdkf"
+#     if not processed_patches:
+#         return None  # Return None if the list is empty
+
+#     # Count the frequency of each string in the list
+#     counter = Counter([patch[0] for patch in processed_patches])
+
+#     # Find the string with the highest frequency
+#     most_common_normalized_patch, freq = counter.most_common(1)[0]
+#     print('Number of times most frequent patch occured: ', freq)
+#     for patch in processed_patches:
+#         if patch[0] == most_common_normalized_patch:
+#             return patch[1]
+
+# def test_output(test):
+#     """test how observations work
+#         Apply a git patch from a string to a designated folder within the given directory.
+
+#     Parameters:
+#     - patch_str (str): The git patch as a string.
+#     - directory (str): The directory containing the subdirectory where the patch should be applied.
+
+#     Returns:
+#     - bool: True if the patch was successfully applied, False otherwise.
+#     """
+#     # print("Hello there")
+#     return("Hello there!")
 
 __all__ = [
     # file operation
@@ -1098,7 +1787,8 @@ __all__ = [
     'parse_latex',
     'parse_pptx',
     # Agentless skills
-    'apply_git_patch',
+    # 'test_output',
+    # 'apply_git_patch',
 ]
 
 if OPENAI_API_KEY and OPENAI_BASE_URL:

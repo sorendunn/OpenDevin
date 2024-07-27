@@ -13,6 +13,7 @@ from opendevin.events.action import (
     IPythonRunCellAction,
 )
 from opendevin.events.observation import (
+    CmdOutputObservation,
     Observation,
 )
 from opendevin.llm.llm import LLM
@@ -88,11 +89,24 @@ class AgentlessAgent(Agent):
         - AgentFinishAction() - end the interaction
         """
 
+        if isinstance(state.history.get_last_observation(), CmdOutputObservation):
+            logger.info('OBSERVATION OUTPUT CMD Observation')
+            logger.info(state.history.get_last_observation())
+            return AgentFinishAction()
+        else:
+            logger.info('OBSERVATION OUTPUT')
+            if state.history.get_last_observation():
+                logger.info(state.history.get_last_observation())  # .content
+            else:
+                logger.info('Last observation Null')
+
         if isinstance(state.history.get_last_action(), IPythonRunCellAction):
             logger.info('Last action ran some code!')
             return AgentFinishAction()
 
-        #         final_patch = """diff --git a/astropy/modeling/separable.py b/astropy/modeling/separable.py
+        # return IPythonRunCellAction(code=f"test_output('a')")
+
+        # final_patch = """diff --git a/astropy/modeling/separable.py b/astropy/modeling/separable.py
         # --- a/astropy/modeling/separable.py
         # +++ b/astropy/modeling/separable.py
         # @@ -242,7 +242,7 @@ def _cstack(left, right):
@@ -105,86 +119,88 @@ class AgentlessAgent(Agent):
         #      return np.hstack([cleft, cright])
 
         # """
+        return IPythonRunCellAction(code="search_dir('astropy')")
         # return IPythonRunCellAction(code=f"apply_git_patch('''{final_patch}''')")
+        # # return IPythonRunCellAction(code=f"apply_git_patch('''{final_patch}''')")
 
-        # Use the above to test the apply_git_patch function
+        # # Use the above to test the apply_git_patch function
 
-        problem_statement = state.history.get_last_user_message()
+        # problem_statement = state.history.get_last_user_message()
 
-        self.install_agentless_libraries()
-        workspace_path, outer_path = self.copy_directory_to_local(problem_statement)
+        # # self.install_agentless_libraries()
+        # # workspace_path, outer_path = self.copy_directory_to_local(problem_statement)
 
-        logger.info('PROBLEM STATEMENT')
-        logger.info(problem_statement)
-        logger.info('Workspace path: ' + workspace_path)
-        repo_structure = self.retrieve_structure(workspace_path)
+        # # logger.info('PROBLEM STATEMENT')
+        # # logger.info(problem_statement)
+        # # logger.info('Workspace path: ' + workspace_path)
+        # # repo_structure = self.retrieve_structure(workspace_path)
 
-        import shutil
+        # # import shutil
 
-        # Check if the path exists
-        if os.path.exists(outer_path):
-            # Delete the directory and all its contents
-            shutil.rmtree(outer_path)
-            logger.info(
-                f'The directory {outer_path} and all its contents have been deleted.'
-            )
-        else:
-            logger.info(f'The directory {outer_path} does not exist.')
+        # # # Check if the path exists
+        # # if os.path.exists(outer_path):
+        # #     # Delete the directory and all its contents
+        # #     shutil.rmtree(outer_path)
+        # #     logger.info(
+        # #         f'The directory {outer_path} and all its contents have been deleted.'
+        # #     )
+        # # else:
+        # #     logger.info(f'The directory {outer_path} does not exist.')
 
-        logger.info('REPO STRUCTURE')
-        for key in repo_structure.keys():
-            logger.info(key)
-            for key2 in repo_structure[key]:
-                logger.info(f'    {key2}')
-        # return AgentFinishAction()
-        file_localization = self.agentless_file_localization(
-            problem_statement, repo_structure
-        )
-        logger.info('FILE LOCALIZATION')
-        for file in file_localization:
-            logger.info(file)
+        # # logger.info('REPO STRUCTURE')
+        # # for key in repo_structure.keys():
+        # #     logger.info(key)
+        # #     for key2 in repo_structure[key]:
+        # #         logger.info(f'    {key2}')
+        # # # return AgentFinishAction()
+        # # file_localization = self.agentless_file_localization(
+        # #     problem_statement, repo_structure
+        # # )
+        # # logger.info('FILE LOCALIZATION')
+        # # for file in file_localization:
+        # #     logger.info(file)
 
-        related_localization = self.agentless_related_localization(
-            problem_statement, repo_structure, file_localization
-        )
-        logger.info('RELATED LOCALIZATION')
-        for rel_loc in related_localization:
-            logger.info(rel_loc)
+        # # related_localization = self.agentless_related_localization(
+        # #     problem_statement, repo_structure, file_localization
+        # # )
+        # # logger.info('RELATED LOCALIZATION')
+        # # for rel_loc in related_localization:
+        # #     logger.info(rel_loc)
 
-        line_localization = self.agentless_line_level_localization(
-            file_localization, related_localization, problem_statement, repo_structure
-        )
-        logger.info('LINE LOCALIZATION')
-        logger.info(line_localization)
+        # # line_localization = self.agentless_line_level_localization(
+        # #     file_localization, related_localization, problem_statement, repo_structure
+        # # )
+        # # logger.info('LINE LOCALIZATION')
+        # # logger.info(line_localization)
 
-        repair_outputs, original_file_contents, file_names = self.agentless_repair(
-            repo_structure, file_localization, line_localization, problem_statement
-        )
-        logger.info('REPAIR OUTPUTS')
-        for i, repair in enumerate(repair_outputs):
-            logger.info(f'Repair {i}')
-            logger.info(repair)
+        # # repair_outputs, original_file_contents, file_names = self.agentless_repair(
+        # #     repo_structure, file_localization, line_localization, problem_statement
+        # # )
+        # # logger.info('REPAIR OUTPUTS')
+        # # for i, repair in enumerate(repair_outputs):
+        # #     logger.info(f'Repair {i}')
+        # #     logger.info(repair)
 
-        processed_patches = self.agentless_post_process_repair(
-            file_localization,
-            line_localization,
-            original_file_contents,
-            file_names,
-            repair_outputs,
-        )
-        logger.info('PROCESSED PATCHES')
-        for i, patch in enumerate(processed_patches):
-            logger.info(f'PATCH {i}')
-            logger.info(patch[1])
-        final_patch = most_frequent_string(processed_patches)
-        logger.info('FINAL PATCH')
-        logger.info(final_patch)
+        # # processed_patches = self.agentless_post_process_repair(
+        # #     file_localization,
+        # #     line_localization,
+        # #     original_file_contents,
+        # #     file_names,
+        # #     repair_outputs,
+        # # )
+        # # logger.info('PROCESSED PATCHES')
+        # # for i, patch in enumerate(processed_patches):
+        # #     logger.info(f'PATCH {i}')
+        # #     logger.info(patch[1])
+        # final_patch = ''  # most_frequent_string(processed_patches)
+        # logger.info('FINAL PATCH')
+        # logger.info(final_patch)
 
-        if final_patch:
-            return IPythonRunCellAction(code=f"apply_git_patch('''{final_patch}''')")
-        else:
-            logger.info('No final patch found!')
-            return AgentFinishAction()
+        # if final_patch:
+        #     return IPythonRunCellAction(code=f"apply_git_patch('''{final_patch}''')")
+        # else:
+        #     logger.info('No final patch found!')
+        #     return AgentFinishAction()
 
     def search_memory(self, query: str) -> list[str]:
         return []
@@ -244,6 +260,7 @@ class AgentlessAgent(Agent):
                 logger.info(f'Error while copying workspace: {e}')
 
         image_name = 'od_sandbox:ghcr.io___opendevin___eval-swe-bench__full-v1.2.1'
+
         import random
         import string
 
